@@ -1,6 +1,4 @@
-# Python code to simulate Sequences of Earthquakes and Aseismic Slip (SEAS)
-
-## Code structure
+# Sequences of Earthquakes and Aseismic Slip (SeqEAS) Python package
 
 ## Installation
 
@@ -13,7 +11,7 @@ pip install ./seqeas-public
 
 ## Documentation
 
-The documentation can be found in the `docs` folder. It is hosted on GitHub publicly
+An API documentation is generated into the `docs` folder. It is hosted on GitHub publicly
 at [tobiscode.github.io/seqeas-public](https://tobiscode.github.io/seqeas-public), but you can
 also read it locally, e.g., by running `python -m http.server 8080 --bind 127.0.0.1`
 from with the documentation folder and then opening a browser. It is created using

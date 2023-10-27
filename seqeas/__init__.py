@@ -1,5 +1,5 @@
 """
-Initialization script
+Root module for package `seqeas` at https://github.com/tobiscode/seqeas-public.
 """
 
 # flake8: noqa
