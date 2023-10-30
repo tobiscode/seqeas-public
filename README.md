@@ -1,5 +1,9 @@
 # Sequences of Earthquakes and Aseismic Slip (seqeas) Python package
 
+Code for the forward modeling part of the study "Probabilistic Estimation of Rheological Properties
+in Subduction Zones using Sequences of Earthquakes and Aseismic Slip" by T. Köhne, R. Mallick, and
+M. Simons, submitted to *Geophysical Journal International*.
+
 ## Installation
 
 ```bash
