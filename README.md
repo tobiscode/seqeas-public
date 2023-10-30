@@ -1,4 +1,4 @@
-# Sequences of Earthquakes and Aseismic Slip (SeqEAS) Python package
+# Sequences of Earthquakes and Aseismic Slip (seqeas) Python package
 
 ## Installation
 
@@ -58,3 +58,20 @@ Uses the data from case (1) with the modified `./2d_pl_case5/fault_subduction.in
 ### 2D: Rate-dependent friction
 
 Uses the data from case (1) with the modified `./2d_rd/fault_subduction.ini` for the inversion models.
+
+## AlTar integration
+
+To run the inverse model (i.e., estimating the rheological parameters that were used to create the target synthetic
+data), any Markov chain Monte Carlo sampler can be used. In our case, we use the
+[AlTar Framework](https://github.com/lijun99/altar) which we have extended to incorporate the model
+of this Python package. This code can be found in the `seas-devel` branch, defined by the [starting executable script
+being](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/bin/SEAS)
+and [model definition](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/seas/SEAS.py).
+
+An example `seas.pfg` configuration file can be found in the folder of Example 1, and it can be used (once AlTar is
+installed) like this:
+
+```bash
+cd ./2d_pl_case1/
+OMP_NUM_THREADS=1 SEAS --config=seas.pfg
+```

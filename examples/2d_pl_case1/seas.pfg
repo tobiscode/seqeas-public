@@ -1,0 +1,114 @@
+; Sequence of Earthqaukes and Aseismic Slip (SEAS) Model
+SEAS:
+    ; shell
+    shell = mpi.shells.mpirun ; for running with mpi
+
+    controller.scheduler.check_positive_definiteness = False
+    controller.sampler.scaling = 0.3
+
+    ; job layout
+    job:
+        tasks = 16      ; number of tasks per host
+        gpus = 0        ; number of gpus per task
+        chains = 300    ; number of chains per task
+        steps = 50      ; the length of each chain
+
+    ; event handlers
+    monitors:
+       prof = altar.bayesian.profiler
+
+    ; model configuration
+    model:
+
+        ; subfolder name
+        case = ./
+
+        ; simulation configuration path
+        config_file = ./fault_subduction.ini
+
+        ; observation locations file
+        obs_loc_file = ./obs_loc.csv
+
+        ; timesteps file
+        t_obs_file = ./t_obs.npy
+
+        dataobs:
+            observations = 91300
+            data_file = surfdisps.txt
+            cd_std = 0.01
+
+        psets_list = [upper_log10_alpha_eff, upper_log10_alpha_eff_mid, upper_log10_alpha_eff_deep, upper_log10_n, upper_log10_n_mid, upper_log10_n_deep, upper_mid_transition, upper_deep_transition]
+
+        ; parameter sets
+        psets:
+            upper_log10_alpha_eff = contiguous
+            upper_log10_alpha_eff_mid = contiguous
+            upper_log10_alpha_eff_deep = contiguous
+            upper_log10_n = contiguous
+            upper_log10_n_mid = contiguous
+            upper_log10_n_deep = contiguous
+            upper_mid_transition = contiguous
+            upper_deep_transition = contiguous
+
+            upper_log10_alpha_eff:
+                count = 1
+                prep = uniform
+                prep.support = (11, 13)
+                prior = uniform
+                prior.support = (11, 13)
+
+            upper_log10_alpha_eff_mid:
+                count = 1
+                prep = uniform
+                prep.support = (14, 16)
+                prior = uniform
+                prior.support = (14, 16)
+
+            upper_log10_alpha_eff_deep:
+                count = 1
+                prep = uniform
+                prep.support = (12, 14)
+                prior = uniform
+                prior.support = (12, 14)
+
+            upper_log10_n:
+                count = 1
+                prep = uniform
+                prep.support = (0, 1.1760912590556813)
+                prior = uniform
+                prior.support = (0, 1.1760912590556813)
+
+            upper_log10_n_mid:
+                count = 1
+                prep = uniform
+                prep.support = (0, 1.1760912590556813)
+                prior = uniform
+                prior.support = (0, 1.1760912590556813)
+
+            upper_log10_n_deep:
+                count = 1
+                prep = uniform
+                prep.support = (0, 1.1760912590556813)
+                prior = uniform
+                prior.support = (0, 1.1760912590556813)
+
+            upper_mid_transition:
+                count = 1
+                prep = uniform
+                prep.support = (40, 70)
+                prior = uniform
+                prior.support = (40, 70)
+
+            upper_deep_transition:
+                count = 1
+                prep = uniform
+                prep.support = (70, 150)
+                prior = uniform
+                prior.support = (70, 150)
+
+
+; for local runs
+; for parallel runs
+mpi.shells.mpirun # altar.plexus.shell:
+    extra = -mca btl self,tcp
+
