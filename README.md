@@ -36,13 +36,13 @@ from with the documentation folder and then opening a browser. It is created usi
 
 ## Examples
 
+All commands assume the user is in the `examples` folder.
+
 ### 2D: Power-law viscosity
 
 These are the commands used to generate the target synthetic data for the different test
 cases. Running `python generate_powerlaw_cases.py` without any arguments shows an explanation
 of the script arguments.
-
-All commands assume the user is in the `examples` folder.
 
 #### Case (1)
 
@@ -75,6 +75,8 @@ Uses the data from case (1) with the modified `./2d_pl_case5/fault_subduction.in
 ### 2D: Rate-dependent friction
 
 Uses the data from case (1) with the modified `./2d_rd/fault_subduction.ini` for the inversion models.
+
+### 3D: Rate-dependent friction in Northern Japan
 
 ## AlTar integration
 
