@@ -1,8 +1,21 @@
 # Sequences of Earthquakes and Aseismic Slip (seqeas) Python package
 
-Code for the forward modeling part of the study "Probabilistic Estimation of Rheological Properties
-in Subduction Zones using Sequences of Earthquakes and Aseismic Slip" by T. Köhne, R. Mallick, and
-M. Simons, submitted to *Geophysical Journal International*.
+Code for the forward modeling part of the studies
+
+> Köhne, T., Mallick, R. & Simons, M.
+> Probabilistic estimation of rheological properties in subduction zones
+> using sequences of earthquakes and aseismic slip.
+> Earth Planets Space 77, 3 (2025). <https://doi.org/10.1186/s40623-024-02121-5>
+
+and
+
+> Köhne, T., Mallick, R., Ragon, T., Zhu, L. & Simons, M.
+> Frictional Properties of the Northern Japanese Subduction Zone from
+> Probabilistic Earthquake Cycle Inversions.
+> (submitted).
+
+The first study concerns the theoretical framework and the synthetic tests in 2D,
+whereas the second one applies the framework in 3D to Northern Japan.
 
 ## Installation
 
@@ -23,11 +36,11 @@ from with the documentation folder and then opening a browser. It is created usi
 
 ## Examples
 
+### 2D: Power-law viscosity
+
 These are the commands used to generate the target synthetic data for the different test
 cases. Running `python generate_powerlaw_cases.py` without any arguments shows an explanation
 of the script arguments.
-
-### 2D: Power-law viscosity
 
 All commands assume the user is in the `examples` folder.
 
@@ -68,12 +81,12 @@ Uses the data from case (1) with the modified `./2d_rd/fault_subduction.ini` for
 To run the inverse model (i.e., estimating the rheological parameters that were used to create the target synthetic
 data), any Markov chain Monte Carlo sampler can be used. In our case, we use the
 [AlTar Framework](https://github.com/lijun99/altar) which we have extended to incorporate the model
-of this Python package. This code can be found in the `seas-devel` branch, defined by the [starting executable script
-being](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/bin/SEAS)
+of this Python package. This code can be found in the `seas-devel` branch, defined by the [starting executable
+script](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/bin/SEAS)
 and [model definition](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/seas/SEAS.py).
 
-An example `seas.pfg` configuration file can be found in the folder of Example 1, and it can be used (once AlTar is
-installed) like this:
+For the 2D case, an example `seas.pfg` configuration file can be found in the folder of
+Example 1, and it can be used (once AlTar is installed) like this:
 
 ```bash
 cd ./2d_pl_case1/
