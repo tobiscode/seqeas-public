@@ -1,0 +1,104 @@
+; Sequence of Earthquakes and Aseismic Slip (SEAS) Model
+SEAS3D:
+    ; shell
+    shell = mpi.shells.slurm ; for running with slurm
+    ; shell = mpi.shells.mpirun ; for running with mpi
+
+    controller.scheduler.check_positive_definiteness = False
+    controller.scheduler.beta_resampling_start = 1e-3
+    controller.sampler.scaling = 0.3
+
+    ; job layout
+    job:
+        hosts = 16      ; number of hosts/nodes
+        tasks = 2       ; number of tasks per host
+        gpus = 1        ; number of gpus per task
+        chains = 512    ; number of chains per task
+        steps = 10      ; the length of each chain
+        gpuprecision = float64
+
+    controller:
+        sampler = altar.cuda.bayesian.metropolis
+        archiver:
+            output_dir = ./ ; output directory
+            output_freq = 1              ; output frequency in beta steps
+
+    ; event handlers
+    monitors:
+       prof = altar.bayesian.profiler
+
+    ; model configuration
+    model = altar.models.seas.cuda.seas3d
+    model:
+
+        ; subfolder name
+        case = ./
+
+        ; simulation configuration path
+        config_file = ./fault_subduction_honshu.ini
+
+        ; cuda_batch_size for the CUDA model object (defaults to # of chains)
+        ; cuda_batch_size = 1
+
+        ; specify number of threads for CUDA integrator (omitted means 0 which means defaults)
+        cuda_threads = 512
+
+        ; print progress of integrator (defaults to False)
+        ; verbose = True
+
+        ; row and column indices of alpha_h_mat to be estimated (None means all)
+        estimate_row_indices = [0, 1, 2, 3]
+        estimate_column_indices = [3, 4, 5, 6, 7]
+
+        dataobs:
+            observations = 17424
+            data_file = ./japan_jpl_ds_timeseries_1eq_jap_honshu4_mask1.h5
+            cd_std = 0.05
+            datafile_dataset = flat
+            mask_dataset = mask
+
+        psets_list = [log10_alpha_h_0, log10_alpha_h_1, log10_alpha_h_2, log10_alpha_h_3]
+
+        ; parameter sets
+        psets:
+            log10_alpha_h_0 = altar.cuda.models.parameterset
+            log10_alpha_h_1 = altar.cuda.models.parameterset
+            log10_alpha_h_2 = altar.cuda.models.parameterset
+            log10_alpha_h_3 = altar.cuda.models.parameterset
+
+            log10_alpha_h_0:
+                count = 5
+                prep = altar.cuda.distributions.uniform
+                prep.support = (5, 10)
+                prior = altar.cuda.distributions.uniform
+                prior.support = (5, 10)
+
+            log10_alpha_h_1:
+                count = 5
+                prep = altar.cuda.distributions.uniform
+                prep.support = (5, 10)
+                prior = altar.cuda.distributions.uniform
+                prior.support = (5, 10)
+
+            log10_alpha_h_2:
+                count = 5
+                prep = altar.cuda.distributions.uniform
+                prep.support = (5, 10)
+                prior = altar.cuda.distributions.uniform
+                prior.support = (5, 10)
+
+            log10_alpha_h_3:
+                count = 5
+                prep = altar.cuda.distributions.uniform
+                prep.support = (5, 10)
+                prior = altar.cuda.distributions.uniform
+                prior.support = (5, 10)
+
+
+; for SLURM runs
+mpi.shells.slurm : ; # SEAS.shell:
+    submit = True
+
+; ; for local runs
+; mpi.shells.mpirun # altar.plexus.shell:
+;     extra = -mca btl self,tcp

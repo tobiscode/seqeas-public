@@ -1,4 +1,4 @@
-python<3.9
+python
 numpy
 scipy
 pandas
@@ -6,3 +6,6 @@ numba
 matplotlib
 cmcrameri
 pdoc
+cartopy
+scikit-learn
+disstans @ git+https://github.com/tobiscode/disstans
