@@ -4,20 +4,40 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seqeas"
-version = "2.0rc"
+version = "2.0"
 authors = [
-  { name="Tobias Köhne", email="47008700+tobiscode@users.noreply.github.com" },
+  { name = "Tobias Köhne", email = "47008700+tobiscode@users.noreply.github.com" },
 ]
 description = "Sequence of Earthquakes and Aseismic Slip"
 readme = "README.md"
-license = { file="LICENSE" }
+license = { file = "LICENSE" }
 requires-python = ">=3.12"
+dependencies = [
+  "numpy",
+  "scipy",
+  "pandas",
+  "numba",
+  "matplotlib",
+  "cmcrameri",
+  "cutde",
+  "h5py",
+  "cartopy",
+  "corner",
+  "meshcut",
+]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Operating System :: OS Independent",
-    "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering"
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+docs = ["pdoc"]
+scripts = [
+  "scikit-learn",
+  "disstans @ git+https://github.com/tobiscode/disstans",
 ]
 
 [project.urls]

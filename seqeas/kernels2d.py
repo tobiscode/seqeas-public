@@ -95,20 +95,20 @@ def Glinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu):
         raise ValueError("x_2 locations need to be zero or less in a halfspace.")
 
     # Define material constant used in calculating influence coefficients.
-    con = 1 / (4*np.pi * (1 - float(nu)))
+    con = 1 / (4 * np.pi * (1 - float(nu)))
     sb, cb = np.sin(beta), np.cos(beta)
-    s2b, c2b = np.sin(2*beta), np.cos(2*beta)
-    s3b, c3b = np.sin(3*beta), np.cos(3*beta)
+    s2b, c2b = np.sin(2 * beta), np.cos(2 * beta)
+    s3b, c3b = np.sin(3 * beta), np.cos(3 * beta)
 
     # Define array of local coordinates for the observation grid relative to
     # the midpoint and orientation of the ith element.
     # Refer to (Figure 5.6, C&S, p. 91) and eqs. 4.5.1 of C&S, p. 57.
-    XB = (x1 - x1midfp)*cb + (x2 - x2midfp)*sb
-    YB = -(x1 - x1midfp)*sb + (x2 - x2midfp)*cb
+    XB = (x1 - x1midfp) * cb + (x2 - x2midfp) * sb
+    YB = -(x1 - x1midfp) * sb + (x2 - x2midfp) * cb
 
     # Coordinates of the image dislocation (equation 7.4.6 C&S)
-    XBi = (x1 - x1midfp)*cb - (x2 + x2midfp)*sb
-    YBi = (x1 - x1midfp)*sb + (x2 + x2midfp)*cb
+    XBi = (x1 - x1midfp) * cb - (x2 + x2midfp) * sb
+    YBi = (x1 - x1midfp) * sb + (x2 + x2midfp) * cb
 
     # Fix roundoff errors in Ybi and Yb from trig function problems
     YB[np.abs(YB) < 1e-10] = 0
@@ -133,10 +133,10 @@ def Glinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu):
 
     # don't solve for locations where R1S(i) or R2S(i) are zero
     skip_ix = (R1S == 0) | (R2S == 0) | (R1Si == 0) | (R2Si == 0)
-    R1S[skip_ix] = np.NaN
-    R2S[skip_ix] = np.NaN
-    R1Si[skip_ix] = np.NaN
-    R2Si[skip_ix] = np.NaN
+    R1S[skip_ix] = np.nan
+    R2S[skip_ix] = np.nan
+    R1Si[skip_ix] = np.nan
+    R2Si[skip_ix] = np.nan
 
     R1S2i = R1Si**2
     R2S2i = R2Si**2
@@ -145,8 +145,9 @@ def Glinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu):
     FF2 = con * (np.log(np.sqrt(R1S)) - np.log(np.sqrt(R2S)))
 
     # get FF3 directly from engle differences without subindexing
-    FF3 = -con * np.angle(np.exp(1j*np.arctan2(YB, XMa))
-                          * np.exp(-1j*np.arctan2(YB, XPa)))
+    FF3 = -con * np.angle(
+        np.exp(1j * np.arctan2(YB, XMa)) * np.exp(-1j * np.arctan2(YB, XPa))
+    )
 
     # get the next derivatives
     FF4 = con * (YB / R1S - YB / R2S)
@@ -154,8 +155,9 @@ def Glinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu):
 
     # Calculate intermediate functions Fni for the image dislocation
     FF2i = con * (np.log(np.sqrt(R1Si)) - np.log(np.sqrt(R2Si)))  # Equations 4.5.5 C&S
-    FF3i = -con * np.angle(np.exp(1j*np.arctan2(YBi, XMai))
-                           * np.exp(-1j*np.arctan2(YBi, XPai)))
+    FF3i = -con * np.angle(
+        np.exp(1j * np.arctan2(YBi, XMai)) * np.exp(-1j * np.arctan2(YBi, XPai))
+    )
     FF4i = con * (YBi / R1Si - YBi / R2Si)
     FF5i = con * (XMai / R1Si - XPai / R2Si)
 
@@ -164,45 +166,57 @@ def Glinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu):
     # normal faults to the surface in basalt, Koae fault system, Hawaii.
     # Journal of Structural Geology, 28(12), pp.2123-2143.
     FF6i = con * ((XMa2i - Y2i) / R1S2i - (XPa2i - Y2i) / R2S2i)
-    FF7i = 2*con * YBi * (XMai / R1S2i - XPai / R2S2i)
+    FF7i = 2 * con * YBi * (XMai / R1S2i - XPai / R2S2i)
 
     # Define material constants used in calculating displacements.
-    pr1 = 1 - 2*nu
+    pr1 = 1 - 2 * nu
     pr2 = 2 * (1 - nu)
-    pr3 = 3 - 4*nu
+    pr3 = 3 - 4 * nu
 
     # Calculate the displacement components using eqs. 5.5.4 of C&S, p. 91.
-    Gxx_s = -pr1*sb*FF2 + pr2*cb*FF3 + YB * (sb*FF4 - cb*FF5)
-    Gxy_n = -pr1*cb*FF2 - pr2*sb*FF3 - YB * (cb*FF4 + sb*FF5)
-    Gyx_s = +pr1*cb*FF2 + pr2*sb*FF3 - YB * (cb*FF4 + sb*FF5)
-    Gyy_n = -pr1*sb*FF2 + pr2*cb*FF3 - YB * (sb*FF4 - cb*FF5)
+    Gxx_s = -pr1 * sb * FF2 + pr2 * cb * FF3 + YB * (sb * FF4 - cb * FF5)
+    Gxy_n = -pr1 * cb * FF2 - pr2 * sb * FF3 - YB * (cb * FF4 + sb * FF5)
+    Gyx_s = +pr1 * cb * FF2 + pr2 * sb * FF3 - YB * (cb * FF4 + sb * FF5)
+    Gyy_n = -pr1 * sb * FF2 + pr2 * cb * FF3 - YB * (sb * FF4 - cb * FF5)
 
     # See equations 7.4.8 and 7.4.9 in Crouch and Starfield
     # Calculate IMAGE AND SUPPLEMENTAL DISPLACEMENT components due to unit SHEAR
     # displacement discontinuity
-    Gxxi_s = (pr1 * sb * FF2i - pr2 * cb * FF3i +
-              (pr3 * (x2 * s2b - YB * sb) + 2 * x2 * s2b) * FF4i +
-              (pr3 * (x2 * c2b - YB * cb) - x2 * (1-2 * c2b)) * FF5i +
-              2 * x2 * (x2 * s3b - YB * s2b) * FF6i -
-              2 * x2 * (x2 * c3b - YB * c2b) * FF7i)
-    Gyxi_s = (-pr1 * cb * FF2i - pr2 * sb * FF3i -
-              (pr3 * (x2 * c2b - YB * cb) + x2 * (1-2 * c2b)) * FF4i +
-              (pr3 * (x2 * s2b - YB * sb) - 2 * x2 * s2b) * FF5i +
-              2 * x2 * (x2 * c3b - YB * c2b) * FF6i +
-              2 * x2 * (x2 * s3b - YB * s2b) * FF7i)
+    Gxxi_s = (
+        pr1 * sb * FF2i
+        - pr2 * cb * FF3i
+        + (pr3 * (x2 * s2b - YB * sb) + 2 * x2 * s2b) * FF4i
+        + (pr3 * (x2 * c2b - YB * cb) - x2 * (1 - 2 * c2b)) * FF5i
+        + 2 * x2 * (x2 * s3b - YB * s2b) * FF6i
+        - 2 * x2 * (x2 * c3b - YB * c2b) * FF7i
+    )
+    Gyxi_s = (
+        -pr1 * cb * FF2i
+        - pr2 * sb * FF3i
+        - (pr3 * (x2 * c2b - YB * cb) + x2 * (1 - 2 * c2b)) * FF4i
+        + (pr3 * (x2 * s2b - YB * sb) - 2 * x2 * s2b) * FF5i
+        + 2 * x2 * (x2 * c3b - YB * c2b) * FF6i
+        + 2 * x2 * (x2 * s3b - YB * s2b) * FF7i
+    )
 
     # Calculate IMAGE AND SUPPLEMENTAL DISPLACEMENT components due to unit NORMAL
     # displacement discontinuity
-    Gxyi_n = (pr1 * cb * FF2i + pr2 * sb * FF3i -
-              (pr3 * (x2 * c2b - YB * cb) - x2) * FF4i +
-              pr3 * (x2 * s2b - YB * sb) * FF5i -
-              2 * x2 * (x2 * c3b - YB * c2b) * FF6i -
-              2 * x2 * (x2 * s3b - YB * s2b) * FF7i)
-    Gyyi_n = (pr1 * sb * FF2i - pr2 * cb * FF3i -
-              pr3 * (x2 * s2b - YB * sb) * FF4i -
-              (pr3 * (x2 * c2b - YB * cb) + x2) * FF5i +
-              2 * x2 * (x2 * s3b - YB * s2b) * FF6i -
-              2 * x2 * (x2 * c3b - YB * c2b) * FF7i)
+    Gxyi_n = (
+        pr1 * cb * FF2i
+        + pr2 * sb * FF3i
+        - (pr3 * (x2 * c2b - YB * cb) - x2) * FF4i
+        + pr3 * (x2 * s2b - YB * sb) * FF5i
+        - 2 * x2 * (x2 * c3b - YB * c2b) * FF6i
+        - 2 * x2 * (x2 * s3b - YB * s2b) * FF7i
+    )
+    Gyyi_n = (
+        pr1 * sb * FF2i
+        - pr2 * cb * FF3i
+        - pr3 * (x2 * s2b - YB * sb) * FF4i
+        - (pr3 * (x2 * c2b - YB * cb) + x2) * FF5i
+        + 2 * x2 * (x2 * s3b - YB * s2b) * FF6i
+        - 2 * x2 * (x2 * c3b - YB * c2b) * FF7i
+    )
 
     Gxx = Gxx_s + Gxxi_s
     Gxy = -(Gxy_n + Gxyi_n)
@@ -298,22 +312,22 @@ def Klinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu, E):
     # The shear modulus, sm, is related to the prescribed elastic constants.
     sm = E / (2 * (1 + float(nu)))
     # Define material constant used in calculating influence coefficients.
-    con = 1 / (4*np.pi * (1 - float(nu)))
+    con = 1 / (4 * np.pi * (1 - float(nu)))
     cons = 2 * sm
     sb, cb = np.sin(beta), np.cos(beta)
-    s2b, c2b = np.sin(2*beta), np.cos(2*beta)
-    s3b, c3b = np.sin(3*beta), np.cos(3*beta)
-    s4b, c4b = np.sin(4*beta), np.cos(4*beta)
+    s2b, c2b = np.sin(2 * beta), np.cos(2 * beta)
+    s3b, c3b = np.sin(3 * beta), np.cos(3 * beta)
+    s4b, c4b = np.sin(4 * beta), np.cos(4 * beta)
 
     # Define array of local coordinates for the observation grid relative to
     # the midpoint and orientation of the ith element.
     # Refer to (Figure 5.6, C&S, p. 91) and eqs. 4.5.1 of C&S, p. 57.
-    XB = (x1 - x1midfp)*cb + (x2 - x2midfp)*sb
-    YB = -(x1 - x1midfp)*sb + (x2 - x2midfp)*cb
+    XB = (x1 - x1midfp) * cb + (x2 - x2midfp) * sb
+    YB = -(x1 - x1midfp) * sb + (x2 - x2midfp) * cb
 
     # Coordinates of the image dislocation (equation 7.4.6 C&S)
-    XBi = (x1 - x1midfp)*cb - (x2 + x2midfp)*sb
-    YBi = (x1 - x1midfp)*sb + (x2 + x2midfp)*cb
+    XBi = (x1 - x1midfp) * cb - (x2 + x2midfp) * sb
+    YBi = (x1 - x1midfp) * sb + (x2 + x2midfp) * cb
 
     # Fix roundoff errors in Ybi and Yb from trig function problems
     YB[np.abs(YB) < 1e-10] = 0
@@ -338,10 +352,10 @@ def Klinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu, E):
 
     # don't solve for locations where R1S(i) or R2S(i) are zero
     skip_ix = (R1S == 0) | (R2S == 0) | (R1Si == 0) | (R2Si == 0)
-    R1S[skip_ix] = np.NaN
-    R2S[skip_ix] = np.NaN
-    R1Si[skip_ix] = np.NaN
-    R2Si[skip_ix] = np.NaN
+    R1S[skip_ix] = np.nan
+    R2S[skip_ix] = np.nan
+    R1Si[skip_ix] = np.nan
+    R2Si[skip_ix] = np.nan
 
     R1S2, R2S2 = R1S**2, R2S**2
     R1S2i, R2S2i = R1Si**2, R2Si**2
@@ -351,7 +365,7 @@ def Klinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu, E):
 
     # The following derivatives are eqs. 5.5.3a and b of C&S, p. 91.
     FF6 = con * ((XMa2 - Y2) / R1S2 - (XPa2 - Y2) / R2S2)
-    FF7 = 2*con * YB * (XMa / R1S2 - XPa / R2S2)
+    FF7 = 2 * con * YB * (XMa / R1S2 - XPa / R2S2)
 
     FF4i = con * (YBi / R1Si - YBi / R2Si)
     FF5i = con * (XMai / R1Si - XPai / R2Si)
@@ -361,71 +375,94 @@ def Klinedisp(x1, x2, x1midfp, x2midfp, halflen, theta, nu, E):
     # normal faults to the surface in basalt, Koae fault system, Hawaii.
     # Journal of Structural Geology, 28(12), pp.2123-2143.
     FF6i = con * ((XMa2i - Y2i) / R1S2i - (XPa2i - Y2i) / R2S2i)
-    FF7i = 2*con * YBi * (XMai / R1S2i - XPai / R2S2i)
+    FF7i = 2 * con * YBi * (XMai / R1S2i - XPai / R2S2i)
 
     # don't estimate at invalid points
-    HR1 = ((halflen + XBi)**2 + YBi**2)
-    HR2 = (YBi**2 + (halflen - XBi)**2)
+    HR1 = (halflen + XBi) ** 2 + YBi**2
+    HR2 = YBi**2 + (halflen - XBi) ** 2
     skip_ix = (HR1 == 0) | (HR2 == 0)
-    HR1[skip_ix] = np.NaN
-    HR2[skip_ix] = np.NaN
+    HR1[skip_ix] = np.nan
+    HR2[skip_ix] = np.nan
 
     # *Tim* I used MATLABs symbolic to find these not eq's A.3 and A.4 of Martel
     # Used Eq.A.1 on variable FF7i (expanded).
-    FF8i = (YBi * (1 / HR1**2 - 1 / HR2**2
-                   + (2 * (halflen - XBi) * (2 * halflen - 2 * XBi)
-                      ) / HR2**3
-                   - (2 * (halflen + XBi) * (2 * halflen + 2 * XBi)
-                      ) / HR1**3)
-            ) / (2 * np.pi * (nu - 1))
-    FF9i = (((halflen - XBi) / HR2**2
-             + (halflen + XBi) / HR1**2) / (2 * np.pi * (nu - 1))
-            - (YBi * ((4 * YBi * (halflen + XBi)) / HR1**3
-                      + (4 * YBi * (halflen - XBi)) / HR2**3)
-               ) / (2 * np.pi * (nu - 1)))
+    FF8i = (
+        YBi
+        * (
+            1 / HR1**2
+            - 1 / HR2**2
+            + (2 * (halflen - XBi) * (2 * halflen - 2 * XBi)) / HR2**3
+            - (2 * (halflen + XBi) * (2 * halflen + 2 * XBi)) / HR1**3
+        )
+    ) / (2 * np.pi * (nu - 1))
+    FF9i = ((halflen - XBi) / HR2**2 + (halflen + XBi) / HR1**2) / (
+        2 * np.pi * (nu - 1)
+    ) - (
+        YBi
+        * ((4 * YBi * (halflen + XBi)) / HR1**3 + (4 * YBi * (halflen - XBi)) / HR2**3)
+    ) / (
+        2 * np.pi * (nu - 1)
+    )
 
     # Calculate the stress components using eqs. 5.5.5 of C&S, p. 92.
-    Kxx_s = 2*(cb*cb)*FF4 + s2b*FF5 + YB * (c2b*FF6-s2b*FF7)
-    Kxx_n = -FF5 + YB * (s2b*FF6 + c2b*FF7)
-    Kyy_s = 2*(sb*sb)*FF4 - s2b*FF5 - YB * (c2b*FF6-s2b*FF7)
-    Kyy_n = -FF5 - YB * (s2b*FF6 + c2b*FF7)
-    Kxy_s = s2b*FF4 - c2b*FF5 + YB * (s2b*FF6+c2b*FF7)
-    Kxy_n = -YB * (c2b*FF6 - s2b*FF7)
+    Kxx_s = 2 * (cb * cb) * FF4 + s2b * FF5 + YB * (c2b * FF6 - s2b * FF7)
+    Kxx_n = -FF5 + YB * (s2b * FF6 + c2b * FF7)
+    Kyy_s = 2 * (sb * sb) * FF4 - s2b * FF5 - YB * (c2b * FF6 - s2b * FF7)
+    Kyy_n = -FF5 - YB * (s2b * FF6 + c2b * FF7)
+    Kxy_s = s2b * FF4 - c2b * FF5 + YB * (s2b * FF6 + c2b * FF7)
+    Kxy_n = -YB * (c2b * FF6 - s2b * FF7)
 
     #  Calculate IMAGE AND SUPPLEMENTAL STRESS components due to unit SHEAR and
     #  NORMAL displacement discontinuity
-    Kxxi_s = (FF4i - 3 * (c2b * FF4i - s2b * FF5i) +
-              (2 * x2 * (cb - 3 * c3b) + 3 * YB * c2b) * FF6i +
-              (2 * x2 * (sb - 3 * s3b) + 3 * YB * s2b) * FF7i -
-              2 * x2 * (x2 * c4b - YB * c3b) * FF8i -
-              2 * x2 * (x2 * s4b - YB * s3b) * FF9i)
+    Kxxi_s = (
+        FF4i
+        - 3 * (c2b * FF4i - s2b * FF5i)
+        + (2 * x2 * (cb - 3 * c3b) + 3 * YB * c2b) * FF6i
+        + (2 * x2 * (sb - 3 * s3b) + 3 * YB * s2b) * FF7i
+        - 2 * x2 * (x2 * c4b - YB * c3b) * FF8i
+        - 2 * x2 * (x2 * s4b - YB * s3b) * FF9i
+    )
 
-    Kxxi_n = (FF5i + (2 * x2 * (sb - 2 * s3b) +
-              3 * YB * s2b) * FF6i - (2 * x2 * (cb - 2 * c3b) +
-              3 * YB * c2b) * FF7i - 2 * x2 * (x2 * s4b - YB * s3b) * FF8i +
-              2 * x2 * (x2 * c4b - YB * c3b) * FF9i)
+    Kxxi_n = (
+        FF5i
+        + (2 * x2 * (sb - 2 * s3b) + 3 * YB * s2b) * FF6i
+        - (2 * x2 * (cb - 2 * c3b) + 3 * YB * c2b) * FF7i
+        - 2 * x2 * (x2 * s4b - YB * s3b) * FF8i
+        + 2 * x2 * (x2 * c4b - YB * c3b) * FF9i
+    )
 
-    Kyyi_s = (FF4i - (c2b * FF4i - s2b * FF5i) -
-              (4 * x2 * sb * s2b - YB * c2b) * FF6i +
-              (4 * x2 * sb * c2b + YB * s2b) * FF7i +
-              2 * x2 * (x2 * c4b - YB * c3b) * FF8i +
-              2 * x2 * (x2 * s4b - YB * s3b) * FF9i)
+    Kyyi_s = (
+        FF4i
+        - (c2b * FF4i - s2b * FF5i)
+        - (4 * x2 * sb * s2b - YB * c2b) * FF6i
+        + (4 * x2 * sb * c2b + YB * s2b) * FF7i
+        + 2 * x2 * (x2 * c4b - YB * c3b) * FF8i
+        + 2 * x2 * (x2 * s4b - YB * s3b) * FF9i
+    )
 
-    Kyyi_n = (FF5i - (2 * x2 * sb - YB * s2b) * FF6i +
-              (2 * x2 * cb - YB * c2b) * FF7i +
-              2 * x2 * (x2 * s4b - YB * s3b) * FF8i -
-              2 * x2 * (x2 * c4b - YB * c3b) * FF9i)
+    Kyyi_n = (
+        FF5i
+        - (2 * x2 * sb - YB * s2b) * FF6i
+        + (2 * x2 * cb - YB * c2b) * FF7i
+        + 2 * x2 * (x2 * s4b - YB * s3b) * FF8i
+        - 2 * x2 * (x2 * c4b - YB * c3b) * FF9i
+    )
 
-    Kxyi_s = (s2b * FF4i + c2b * FF5i +
-              (2 * x2 * sb * (1 + 4 * c2b) - YB * s2b) * FF6i +
-              (2 * x2 * cb * (3 - 4 * c2b) + YB * c2b) * FF7i +
-              2 * x2 * (x2 * s4b - YB * s3b) * FF8i -
-              2 * x2 * (x2 * c4b - YB * c3b) * FF9i)
+    Kxyi_s = (
+        s2b * FF4i
+        + c2b * FF5i
+        + (2 * x2 * sb * (1 + 4 * c2b) - YB * s2b) * FF6i
+        + (2 * x2 * cb * (3 - 4 * c2b) + YB * c2b) * FF7i
+        + 2 * x2 * (x2 * s4b - YB * s3b) * FF8i
+        - 2 * x2 * (x2 * c4b - YB * c3b) * FF9i
+    )
 
-    Kxyi_n = ((4 * x2 * sb * s2b + YB * c2b) * FF6i -
-              (4 * x2 * sb * c2b - YB * s2b) * FF7i -
-              2 * x2 * (x2 * c4b - YB * c3b) * FF8i -
-              2 * x2 * (x2 * s4b - YB * s3b) * FF9i)
+    Kxyi_n = (
+        (4 * x2 * sb * s2b + YB * c2b) * FF6i
+        - (4 * x2 * sb * c2b - YB * s2b) * FF7i
+        - 2 * x2 * (x2 * c4b - YB * c3b) * FF8i
+        - 2 * x2 * (x2 * s4b - YB * s3b) * FF9i
+    )
 
     Kxx = np.hstack([Kxx_s + Kxxi_s, -Kxx_n - Kxxi_n])
     Kyy = np.hstack([Kyy_s + Kyyi_s, -Kyy_n - Kyyi_n])

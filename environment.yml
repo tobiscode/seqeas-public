@@ -1,0 +1,23 @@
+name: seqeas
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python>=3.12
+  - numpy
+  - scipy
+  - pandas
+  - numba
+  - matplotlib
+  - cmcrameri
+  - cutde
+  - h5py
+  - cartopy
+  - corner
+  - meshcut
+  - scikit-learn # optional
+  - pdoc # optional
+  - pip
+  - pip:
+    - okada-wrapper>=24.6.15 # optional, required for disstans.earthquakes okada functions
+    - disstans @ git+https://github.com/tobiscode/disstans # optional, required for scripts
