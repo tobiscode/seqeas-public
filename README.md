@@ -41,25 +41,25 @@ All commands assume the user is in the `examples` folder.
 ### 2D: Power-law viscosity
 
 These are the commands used to generate the target synthetic data for the different test
-cases. Running `python generate_powerlaw_cases.py` without any arguments shows an explanation
+cases. Running `python 2d_generate_powerlaw_cases.py` without any arguments shows an explanation
 of the script arguments.
 
 #### Case (1)
 
 ```bash
-python generate_powerlaw_cases.py ./2d_pl_case1/ 200 400 5 -25 -0.0034223 9130 0.01
+python 2d_generate_powerlaw_cases.py ./2d_pl_case1/ 200 400 5 -25 -0.0034223 9130 0.01
 ```
 
 #### Case (2)
 
 ```bash
-python generate_powerlaw_cases.py ./2d_pl_case2/ --no-plot-faultvels --no-plot-faultslip --no-plot-eqvels --no-plot-fault --no-plot-phases --no-plot-viscosity --no-plot-viscosity_ts 200 400 5 -10.809 -0.0034223 3947 0.01
+python 2d_generate_powerlaw_cases.py ./2d_pl_case2/ --no-plot-faultvels --no-plot-faultslip --no-plot-eqvels --no-plot-fault --no-plot-phases --no-plot-viscosity --no-plot-viscosity_ts 200 400 5 -10.809 -0.0034223 3947 0.01
 ```
 
 #### Case (3)
 
 ```bash
-python generate_powerlaw_cases.py ./2d_pl_case3/ --no-plot-faultvels --no-plot-faultslip --no-plot-eqvels --no-plot-fault --no-plot-phases --no-plot-viscosity --no-plot-viscosity_ts 200 400 5 -10.77067 -0.0034223 3933 0.01
+python 2d_generate_powerlaw_cases.py ./2d_pl_case3/ --no-plot-faultvels --no-plot-faultslip --no-plot-eqvels --no-plot-fault --no-plot-phases --no-plot-viscosity --no-plot-viscosity_ts 200 400 5 -10.77067 -0.0034223 3933 0.01
 ```
 
 (The horizontal observations are still generated here, but then later ignored by the inversion step.)
@@ -83,9 +83,16 @@ Uses the data from case (1) with the modified `./2d_rd/fault_subduction.ini` for
 To run the inverse model (i.e., estimating the rheological parameters that were used to create the target synthetic
 data), any Markov chain Monte Carlo sampler can be used. In our case, we use the
 [AlTar Framework](https://github.com/lijun99/altar) which we have extended to incorporate the model
-of this Python package. This code can be found in the `seas-devel` branch, defined by the [starting executable
-script](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/bin/SEAS)
-and [model definition](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/seas/SEAS.py).
+of this Python package. This code can be found in the `seas-devel` branch, with more
+detailed links in the subsections below. Before running the next steps, make sure AlTar
+is installed into the same environment as seqeas.
+
+### 2D
+
+AlTar links:
+
+- [starting executable script](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/bin/SEAS)
+- [model definition](https://github.com/lijun99/altar/blob/b00a8194cf9c7d1137b25b0242aefaaf7216d2a3/models/seas/seas/SEAS.py)
 
 For the 2D case, an example `seas.pfg` configuration file can be found in the folder of
 Example 1, and it can be used (once AlTar is installed) like this:
