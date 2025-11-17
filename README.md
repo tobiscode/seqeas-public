@@ -12,7 +12,7 @@ and
 > Köhne, T., Mallick, R., Ragon, T., Zhu, L. & Simons, M.
 > Frictional Properties of the Northern Japanese Subduction Zone from
 > Probabilistic Earthquake Cycle Inversions.
-> (submitted).
+> (in preparation)
 
 The first study concerns the theoretical framework and the synthetic tests in 2D,
 whereas the second one applies the framework in 3D to Northern Japan.
@@ -21,7 +21,7 @@ whereas the second one applies the framework in 3D to Northern Japan.
 
 ```bash
 git clone https://github.com/tobiscode/seqeas-public
-conda create --name seqeas --channel conda-forge --override-channels --file seqeas-public/requirements.txt
+conda env create --file environment.yml
 conda activate seqeas
 pip install ./seqeas-public
 ```
