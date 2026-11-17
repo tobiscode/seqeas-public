@@ -38,20 +38,16 @@ DATA_OUT_BASENAME = "japan_jpl_ds_timeseries_1eq"
 DATA_IN_BASENAME = f"{DATA_ROOT}/{DATA_OUT_BASENAME}"
 SEC_VEL_DATA_FNAME = f"{DATA_ROOT}/japan_jpl_secular_igs.csv"
 UTMZONE = 54
-# ROT_PAC_ITRF = np.array([-0.1135, 0.2907, -0.6025])  # [°/Ma]
-ROT_PAC_ITRF = np.array(
-    [-0.11096408, 0.29365791, -0.60432856]
-)  # [°/Ma] PA plate from Kreemer
-# ROT_EUR_ITRF = np.array([-0.0235, -0.1476, 0.2140])  # [°/Ma]
-ROT_EUR_ITRF = np.array(
-    [-0.01315961, -0.1725996, 0.08759111]
-)  # [°/Ma] OK plate from Kreemer
+ROT_PAC_ITRF = np.array([-0.1135, 0.2907, -0.6025])  # [°/Ma] PCFC plate from ITRF 2014
+# ROT_PAC_ITRF = np.array([-0.11096408, 0.29365791, -0.60432856])  # [°/Ma] PA plate from Kreemer
+ROT_EUR_ITRF = np.array([-0.0235, -0.1476, 0.2140])  # [°/Ma] EURA plate from ITRF 2014
+# ROT_EUR_ITRF = np.array([-0.01315961, -0.1725996, 0.08759111])  # [°/Ma] OK plate from Kreemer
 ROT_PAC_EUR = ROT_PAC_ITRF - ROT_EUR_ITRF
 PROJ_PC = ccrs.PlateCarree()
 PROJ_GEOD = ccrs.Geodetic()
 PROJ_UTM = ccrs.UTM(zone=UTMZONE)
-CORRECTED_V_PLATE_FILE = "corrected_farfield_motion_ok.npy"
-CORRECTIONS_FILE = "corrected_japan_euler_poles_ok.json"
+CORRECTED_V_PLATE_FILE = "corrected_farfield_motion.npy"
+CORRECTIONS_FILE = "corrected_japan_euler_poles.json"
 # NEWTAB10 = ["#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#59a14f",
 #             "#edc948", "#b07aa1", "#ff9da7", "#9c755f", "#bab0ac"]
 NJAPAN_POLY = np.array([[34.5, 138.5], [34.5, 147], [46, 147], [46, 138.5]])
@@ -1062,16 +1058,16 @@ if __name__ == "__main__":
     # remove from PAC timeseries to get JAP timeseries
     ts_obs_jap = ts_obs_pac - combined_ts_jap_to_pac
     # save
-    np.save(DATA_OUT_BASENAME + "_jap_ok.npy", ts_obs_jap)
-    shutil.copy2(f"{DATA_IN_BASENAME}.json", DATA_OUT_BASENAME + "_jap_ok.json")
+    np.save(DATA_OUT_BASENAME + "_jap.npy", ts_obs_jap)
+    shutil.copy2(f"{DATA_IN_BASENAME}.json", DATA_OUT_BASENAME + "_jap.json")
 
     # save data for just honshu
     obs_loc_honshu = obs_loc.iloc[sta_in_honshu, :]
-    obs_loc_honshu.to_csv(f"{OBS_LOC_BASENAME}_honshu_ok.csv")
-    np.save(DATA_OUT_BASENAME + "_jap_honshu_ok.npy", ts_obs_jap[sta_in_honshu, :, :])
+    obs_loc_honshu.to_csv(f"{OBS_LOC_BASENAME}_honshu.csv")
+    np.save(DATA_OUT_BASENAME + "_jap_honshu.npy", ts_obs_jap[sta_in_honshu, :, :])
     with (
         open(f"{DATA_IN_BASENAME}.json", mode="rt") as fin,
-        open(DATA_OUT_BASENAME + "_jap_honshu_ok.json", mode="wt") as fout,
+        open(DATA_OUT_BASENAME + "_jap_honshu.json", mode="wt") as fout,
     ):
         temp_info = json.load(fin)
         temp_info["ts_shape"][0] = int(sta_in_honshu.sum())
@@ -1218,7 +1214,7 @@ if __name__ == "__main__":
         loc="lower right",
     )
     fig1.suptitle("Fit progression of observed surface velocities in PAC")
-    fig1.savefig("corrected_fit_surface_ok.pdf", dpi=300)
+    fig1.savefig("corrected_fit_surface.pdf", dpi=300)
 
     # plot progression of fault slip rates
     s2 = 1e-1
@@ -1301,7 +1297,7 @@ if __name__ == "__main__":
         loc="lower right",
     )
     fig2.suptitle("Fit progression of plate interface fault slip rate")
-    fig2.savefig("corrected_fit_plate_ok.pdf", dpi=300)
+    fig2.savefig("corrected_fit_plate.pdf", dpi=300)
 
     # plot observations in JAP reference frame
     s3 = 5e-2
@@ -1335,7 +1331,7 @@ if __name__ == "__main__":
     ax3.quiverkey(q, 0.8, 0.25, 0.1, label="100 mm/a", color="k")
     ax3.legend(loc="lower right")
     fig3.suptitle("Observations in Overriding Plate Reference Frames")
-    fig3.savefig("corrected_final_observations_ok.pdf", dpi=300)
+    fig3.savefig("corrected_final_observations.pdf", dpi=300)
 
     # # show
     # plt.show()

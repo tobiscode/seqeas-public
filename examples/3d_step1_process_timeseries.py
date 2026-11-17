@@ -19,21 +19,16 @@ from matplotlib.path import Path as MPath
 from sklearn.linear_model import MultiTaskLassoCV
 from multiprocessing import Pool
 from scipy.spatial import ConvexHull
-from disstans.tools import eulerpole2rotvec
-from pyproj import Transformer, CRS
-
-# from cmcrameri import cm
-# from itertools import product
 
 # DISSTANS
 import disstans
 
-# warnings.filterwarnings("error", category=RuntimeWarning)
-
 # define mode of operation
-RUN_DISSTANS = True
+RUN_DISSTANS = False
+DRY_RUN_DISSTANS = True
 RUN_DOWNSAMPLING = True
-MAKE_PLOTS = True
+DRY_RUN_DOWNSAMPLING = False
+MAKE_PLOTS = False
 
 # define input paths
 NETWORK_DATA_PATH = None  # set path to folder that contains the Moore (2024) dataset
@@ -51,7 +46,7 @@ NETWORK_FNAME = None  # set filename where to save/load processed Network object
 assert NETWORK_FNAME is not None, "'NETWORK_FNAME' must be set"
 SEC_VEL_DATA_BASENAME = "out/japan/japan_jpl_secular"
 SEC_VEL_FIG_IGS_FNAME = "out/japan/japan_jpl_secular_igs.png"
-SEC_VEL_FIG_OK_FNAME = "out/japan/japan_jpl_secular_ok.png"
+SEC_VEL_FIG_EU_FNAME = "out/japan/japan_jpl_secular_eu.png"
 TOH_STEPS_DATA_FNAME = "out/japan/japan_jpl_tohoku.csv"
 OBS_LOC_FNAME = "out/japan/obs_loc_jpl.csv"
 T_EVAL_BASENAME = "out/japan/japan_jpl_ds_t_eval"
@@ -86,17 +81,6 @@ HONSHU_PATH = Polygon(
     )
 ).get_path()
 UTMZONE = 54
-# ITRF2014 plate motion model: https://doi.org/10.1093/gji/ggx136
-ROT_EU = np.deg2rad(np.array([-0.0235, -0.1476, 0.2140])) / 1e6  # [rad/a]
-ROT_PA = np.deg2rad(np.array([-0.1135, 0.2907, -0.6025])) / 1e6  # [rad/a]
-ROT_OK = eulerpole2rotvec(np.deg2rad([-94.36, 26.84, 0.194])) / 1e6  # [rad/a]
-# map projections
-CRS_GUI = ccrs.Mercator()
-CRS_PC = ccrs.PlateCarree()
-CRS_LLA = ccrs.Geodetic()
-CRS_XYZ = ccrs.Geocentric()
-CRS_WGS = CRS("WGS84")
-CRS_UTM = CRS.from_epsg(32654)
 
 
 def durbin_watson(e):
@@ -191,7 +175,7 @@ if __name__ == "__main__":
     # run full model
     else:
 
-        # create raw JPL network file from scratch
+        # create Network object from scratch
         print("create network")
         net = disstans.Network(
             "JPL Hon/Hok",
@@ -218,6 +202,7 @@ if __name__ == "__main__":
             else:
                 del net[sta_name]
                 print(f"Deleted {sta_name} because of missing data.")
+                
         station_loc_df = net.station_locations
         sta_in_honshu = HONSHU_PATH.contains_points(station_loc_df.values[:, [1, 0]])
         honshu_sta_names = sorted(station_loc_df.index[sta_in_honshu].tolist())
@@ -318,32 +303,6 @@ if __name__ == "__main__":
                     trend_change[sta_name][i] = [None] * len(trend_change[sta_name][i])
         # stack as array
         tc_arr = np.stack([tc for tc in trend_change.values()]).astype(float)
-
-        # # make a plot for each tested earthquake showing trend change in 3D
-        # CRS_GUI = ccrs.Mercator()
-        # CRS_PC = ccrs.PlateCarree()
-        # station_locs = station_loc_df.values
-        # for ieq, eqcat in catalog.iterrows():
-        #     fig_map = plt.figure()
-        #     ax_map = fig_map.add_subplot(projection=CRS_GUI)
-        #     ax_map.gridlines(draw_labels=True, zorder=-1)
-        #     ax_map.set_extent([138, 152, 34, 47])
-        #     q = ax_map.quiver(station_locs[:, 1], station_locs[:, 0],
-        #                       tc_arr[:, ieq, 0], tc_arr[:, ieq, 1],
-        #                       scale=100, transform=CRS_PC)
-        #     ax_map.quiverkey(q, 0.85, 0.85, 10, r"10 $\Delta$ horizontal [mm/a]")
-        #     pts = ax_map.scatter(station_locs[:, 1], station_locs[:, 0],
-        #                          c=tc_arr[:, ieq, 2], vmin=-1, vmax=1,
-        #                          cmap=cm.vik, transform=CRS_PC)
-        #     ax_map.scatter(eqcat["Longitude(°)"], eqcat["Latitude(°)"],
-        #                    color=cm.bam(0.9), s=500, marker="*",
-        #                    zorder=-1, transform=CRS_PC)
-        #     ax_map.annotate(f"$M_w$ {eqcat['MT_Magnitude(Mw)']}",
-        #                     (eqcat["Longitude(°)"], eqcat["Latitude(°)"]),
-        #                     xytext=(20, 0), textcoords="offset pixels",
-        #                     transform=CRS_PC, annotation_clip=True)
-        #     fig_map.colorbar(pts, label=r"$\Delta$ up [mm/a]")
-        #     fig_map.suptitle(f"Trend change for EQ on {check_times[ieq]}")
 
         # add simple models
         models = {
@@ -902,8 +861,9 @@ if __name__ == "__main__":
             )
 
         # save
-        with open(NETWORK_FNAME, mode="wb") as f:
-            pickle.dump(net, f)
+        if not DRY_RUN_DISSTANS:
+            with open(NETWORK_FNAME, mode="wb") as f:
+                pickle.dump(net, f)
 
     # extract secular velocities
     poly_stat_names = [
@@ -944,7 +904,8 @@ if __name__ == "__main__":
     # make pretty and save
     all_poly_df.sort_index(inplace=True)
     all_poly_df.index.rename("station", inplace=True)
-    all_poly_df.to_csv(f"{SEC_VEL_DATA_BASENAME}_igs.csv")
+    if not DRY_RUN_DISSTANS:
+        all_poly_df.to_csv(f"{SEC_VEL_DATA_BASENAME}_igs.csv")
 
     # load MIDAS velocities
     v_mdl_midas = pd.read_csv(
@@ -991,11 +952,13 @@ if __name__ == "__main__":
 
     # plot preparations
     station_locs = station_loc_df.loc[all_poly_df.index.tolist(), :].to_numpy()
+    proj_gui = ccrs.Mercator()
+    proj_lla = ccrs.PlateCarree()
 
     # make secular velocity map
     if MAKE_PLOTS:
         fig_map = plt.figure(figsize=(8, 5))
-        ax_map = fig_map.add_subplot(projection=CRS_GUI)
+        ax_map = fig_map.add_subplot(projection=proj_gui)
         ax_map.gridlines(draw_labels=True, zorder=-1)
         q = ax_map.quiver(
             v_mdl_midas["lon"],
@@ -1006,7 +969,7 @@ if __name__ == "__main__":
             scale=5e-4,
             width=2e3,
             color="C1",
-            transform=CRS_PC,
+            transform=proj_lla,
             label="MIDAS",
         )
         q = ax_map.quiver(
@@ -1018,21 +981,29 @@ if __name__ == "__main__":
             scale=5e-4,
             width=2e3,
             color="k",
-            transform=CRS_PC,
+            transform=proj_lla,
             label="DISSTANS",
         )
         ax_map.quiverkey(q, 0.85, 0.85, 10, "10 mm/a", color="0.3")
         ax_map.legend(loc="lower right", ncol=3, fontsize="small")
         ax_map.set_title("Secular Velocity (IGS)")
-        fig_map.savefig(SEC_VEL_FIG_IGS_FNAME, dpi=300)
+        if not DRY_RUN_DISSTANS:
+            fig_map.savefig(SEC_VEL_FIG_IGS_FNAME, dpi=300)
         plt.close(fig_map)
+
+    # get predicted Eurasia plate motion from
+    # ITRF2014 plate motion model: https://doi.org/10.1093/gji/ggx136
+    rot_EU_degperma = np.array([-0.0235, -0.1476, 0.2140])
+    rot_EU = np.deg2rad(rot_EU_degperma) / 1e6  # [rad/a]
+    crs_lla = ccrs.Geodetic()
+    crs_xyz = ccrs.Geocentric()
 
     # remove EU velocity from DISSTANS
     lons_d, lats_d, alts_d = station_loc_df.loc[
         all_poly_df.index, ["Longitude [°]", "Latitude [°]", "Altitude [m]"]
     ].values.T
-    stat_xyz_d = CRS_XYZ.transform_points(CRS_LLA, lons_d, lats_d, alts_d)
-    v_EU_xyz_d = np.cross(ROT_EU, stat_xyz_d)  # [m/a]
+    stat_xyz_d = crs_xyz.transform_points(crs_lla, lons_d, lats_d, alts_d)
+    v_EU_xyz_d = np.cross(rot_EU, stat_xyz_d)  # [m/a]
     v_EU_enu_d = pd.DataFrame(
         data=np.stack(
             [
@@ -1054,28 +1025,10 @@ if __name__ == "__main__":
     ].values
     v_mdl_DISSTANS_eu.iloc[:, :] *= 1000
 
-    # remove OK velocity from DISSTANS
-    v_OK_xyz_d = np.cross(ROT_OK, stat_xyz_d)  # [m/a]
-    v_OK_enu_d = pd.DataFrame(
-        data=np.stack(
-            [
-                (disstans.tools.R_ecef2enu(lo, la) @ v_OK_xyz_d[i, :])
-                for i, (lo, la) in enumerate(zip(lons_d, lats_d))
-            ]
-        ),
-        index=all_poly_df.index,
-        columns=["vel_e", "vel_n", "vel_u"],
-    )
-    v_mdl_DISSTANS_ok = (-v_OK_enu_d.iloc[:, :2]) + v_mdl_DISSTANS_igs[
-        ["vel_e", "vel_n"]
-    ].values
-    v_mdl_DISSTANS_ok.iloc[:, :] *= 1000
-
     # repeat for MIDAS
-    # EU
     lons_m, lats_m, alts_m = v_mdl_midas.loc[:, ["lon", "lat", "alt"]].values.T
-    stat_xyz_m = CRS_XYZ.transform_points(CRS_LLA, lons_m, lats_m, alts_m)
-    v_EU_xyz_m = np.cross(ROT_EU, stat_xyz_m)  # [m/a]
+    stat_xyz_m = crs_xyz.transform_points(crs_lla, lons_m, lats_m, alts_m)
+    v_EU_xyz_m = np.cross(rot_EU, stat_xyz_m)  # [m/a]
     v_EU_enu_m = pd.DataFrame(
         data=np.stack(
             [
@@ -1096,34 +1049,20 @@ if __name__ == "__main__":
         ["vel_e", "vel_n"]
     ].values
     v_mdl_MIDAS_eu.iloc[:, :] *= 1000
-    # OK
-    v_OK_xyz_m = np.cross(ROT_OK, stat_xyz_m)  # [m/a]
-    v_OK_enu_m = pd.DataFrame(
-        data=np.stack(
-            [
-                (disstans.tools.R_ecef2enu(lo, la) @ v_OK_xyz_m[i, :])
-                for i, (lo, la) in enumerate(zip(lons_m, lats_m))
-            ]
-        ),
-        index=v_mdl_midas.index,
-        columns=["vel_e", "vel_n", "vel_u"],
-    )
-    v_mdl_MIDAS_ok = (-v_OK_enu_m.iloc[:, :2]) + v_mdl_MIDAS_igs[
-        ["vel_e", "vel_n"]
-    ].values
-    v_mdl_MIDAS_ok.iloc[:, :] *= 1000
 
     # load interseismic velocities from Loveless & Meade (2016)
     # https://doi.org/10.1016/j.epsl.2015.12.033
-    v_mdl_LM16_ok = pd.read_csv(LM16_FNAME, index_col=0, delimiter=r"\s+", comment="#")
+    v_mdl_LM16_eu = pd.read_csv(LM16_FNAME, index_col=0, delimiter=r"\s+", comment="#")
     inside_njapan_lm16 = njapan_path.contains_points(
-        v_mdl_LM16_ok[["latitude", "longitude"]].values
+        v_mdl_LM16_eu[["latitude", "longitude"]].values
     )
-    v_mdl_LM16_ok = v_mdl_LM16_ok.iloc[inside_njapan_lm16, :]
+    v_mdl_LM16_eu = v_mdl_LM16_eu.iloc[inside_njapan_lm16, :]
 
     # calculate what the 100% PA plate convergence rate would be like in
-    # the OK reference frame
-    v_PA_xyz_d = np.cross(ROT_PA, stat_xyz_d)  # [m/a]
+    # the EU reference frame
+    rot_PA_degperma = np.array([-0.1135, 0.2907, -0.6025])
+    rot_PA = np.deg2rad(rot_PA_degperma) / 1e6  # [rad/a]
+    v_PA_xyz_d = np.cross(rot_PA, stat_xyz_d)  # [m/a]
     v_PA_enu_d = pd.DataFrame(
         data=np.stack(
             [
@@ -1135,86 +1074,75 @@ if __name__ == "__main__":
         columns=["vel_e", "vel_n", "vel_u"],
     )
     v_PA_enu_d.iloc[:, :] /= 1000
-    v_PA_rel_OK_d = (v_PA_enu_d - v_OK_enu_d) * 1000
+    v_PA_rel_EU_d = (v_PA_enu_d - v_EU_enu_d) * 1000
 
     # as a quality check, calculate which extracted secular velocities are more
-    # than 100% off the plate velocity, or which ones have been defined purely
-    # using post-Tohoku data
-    pa_res = v_PA_rel_OK_d.iloc[:, :2] - v_mdl_DISSTANS_ok
+    # than 100% off the plate velocity
+    pa_res = v_PA_rel_EU_d.iloc[:, :2] - v_mdl_DISSTANS_eu
     pa_rms = np.linalg.norm(pa_res.values, axis=1)
-    pa_rms_rel = pa_rms / np.linalg.norm(v_PA_rel_OK_d.values[:, :2], axis=1)
+    pa_rms_rel = pa_rms / np.linalg.norm(v_PA_rel_EU_d.values[:, :2], axis=1)
     pa_i_off = pa_rms_rel > 1
-    sta_has_pre_toh_data = [
-        np.any(
-            np.isfinite(
-                sta["final"].data.loc[sta["final"].time < pd.Timestamp("2011-03-10"), :]
-            )
-        )
-        for sta in net
-    ]
-    i_sta_clean = np.logical_and(~pa_i_off, sta_has_pre_toh_data)
-    sta_clean = v_PA_rel_OK_d.index[i_sta_clean].tolist()
+    sta_with_pa = v_PA_rel_EU_d.index[~pa_i_off].tolist()
 
     # save clean data
-    v_mdl_DISSTANS_eu.iloc[i_sta_clean, :].to_csv(
-        f"{SEC_VEL_DATA_BASENAME}_eu_clean.csv"
-    )
-    v_mdl_DISSTANS_ok.iloc[i_sta_clean, :].to_csv(
-        f"{SEC_VEL_DATA_BASENAME}_ok_clean.csv"
-    )
+    if not DRY_RUN_DISSTANS:
+        v_mdl_DISSTANS_eu.iloc[~pa_i_off, :].to_csv(
+            f"{SEC_VEL_DATA_BASENAME}_eu_clean.csv"
+        )
 
-    # redo secular velocity plot in OK reference frame
+    # redo secular velocity plot in EU reference frame
     if MAKE_PLOTS:
-        cols_pa_off = ["C0" if io else "C3" for io in i_sta_clean]
+        cols_pa_off = ["C0" if not io else "C1" for io in pa_i_off]
         fig_map = plt.figure(figsize=(8, 5))
-        ax_map = fig_map.add_subplot(projection=CRS_GUI)
+        ax_map = fig_map.add_subplot(projection=proj_gui)
         ax_map.gridlines(draw_labels=True, zorder=-1)
         q = ax_map.quiver(
             station_locs[:, 1],
             station_locs[:, 0],
-            v_PA_rel_OK_d["vel_e"],
-            v_PA_rel_OK_d["vel_n"],
+            v_PA_rel_EU_d["vel_e"],
+            v_PA_rel_EU_d["vel_n"],
             units="xy",
             scale=5e-4,
             width=4e3,
             color="0.8",
-            transform=CRS_PC,
+            transform=proj_lla,
             label="PA plate",
         )
         # q = ax_map.quiver(v_mdl_midas["lon"],
         #                   v_mdl_midas["lat"],
-        #                   v_mdl_MIDAS_ok["vel_e"],
-        #                   v_mdl_MIDAS_ok["vel_n"],
-        #                   units="xy", scale=5e-4, width=2e3, color="C2",
-        #                   transform=CRS_PC, label="MIDAS")
+        #                   v_mdl_MIDAS_eu["vel_e"],
+        #                   v_mdl_MIDAS_eu["vel_n"],
+        #                   units="xy", scale=5e-4, width=2e3, color="C0",
+        #                   transform=proj_lla, label="MIDAS")
         q = ax_map.quiver(
-            v_mdl_LM16_ok["longitude"],
-            v_mdl_LM16_ok["latitude"],
-            v_mdl_LM16_ok["east velocity (mm/yr)"],
-            v_mdl_LM16_ok["north velocity (mm/yr)"],
+            v_mdl_LM16_eu["longitude"],
+            v_mdl_LM16_eu["latitude"],
+            v_mdl_LM16_eu["east velocity (mm/yr)"],
+            v_mdl_LM16_eu["north velocity (mm/yr)"],
             units="xy",
             scale=5e-4,
             width=2e3,
-            color="C1",
-            transform=CRS_PC,
+            color="k",
+            transform=proj_lla,
             label="L&M 2016",
         )
         q = ax_map.quiver(
             station_locs[:, 1],
             station_locs[:, 0],
-            v_mdl_DISSTANS_ok["vel_e"],
-            v_mdl_DISSTANS_ok["vel_n"],
+            v_mdl_DISSTANS_eu["vel_e"],
+            v_mdl_DISSTANS_eu["vel_n"],
             units="xy",
             scale=5e-4,
             width=2e3,
             color=cols_pa_off,
-            transform=CRS_PC,
+            transform=proj_lla,
             label="DISSTANS",
         )
         ax_map.quiverkey(q, 0.85, 0.85, 100, "10 cm/a", color="0.3")
         ax_map.legend(loc="lower right", ncol=1, fontsize="small")
-        ax_map.set_title("Secular Velocity (OK)")
-        fig_map.savefig(SEC_VEL_FIG_OK_FNAME, dpi=300)
+        ax_map.set_title("Secular Velocity (EU)")
+        if not DRY_RUN_DISSTANS:
+            fig_map.savefig(SEC_VEL_FIG_EU_FNAME, dpi=300)
         plt.close(fig_map)
 
     # extract Tohoku coseismic step
@@ -1233,27 +1161,15 @@ if __name__ == "__main__":
                 )
                 else np.full(3, np.nan)
             )
-            for n in sta_clean
+            for n in sta_with_pa
         ]
     )
     tohoku_steps_df = pd.DataFrame(
-        data=tohoku_steps, index=sta_clean, columns=["e", "n", "u"]
+        data=tohoku_steps, index=sta_with_pa, columns=["e", "n", "u"]
     )
     tohoku_steps_df.index.rename("station", inplace=True)
-    tohoku_steps_df.to_csv(TOH_STEPS_DATA_FNAME)
-
-    # # prepare subsampling
-    # ct_plus = [t_min] + check_times + [t_max]
-    # ct_diff = np.diff(pd.DatetimeIndex(ct_plus)).astype(float) / 1e9 / 86400 / 365.25
-    # t_eval_rel = np.concatenate(
-    #     [np.linspace(0, ct_diff[0], N_SAMPLES_PER_EQ, endpoint=False)] +
-    #     [np.logspace(0, np.log10(1 + t), N_SAMPLES_PER_EQ, endpoint=False)
-    #      - 1 + np.sum(ct_diff[:i + 1]) for i, t in enumerate(ct_diff[1:])])
-    # t_eval_obs_2eq = t_min + t_eval_rel * pd.Timedelta(365.25, "D")
-    # check_times_dates_2eq = [pd.Timestamp(ct.date()) for ct in check_times]
-    # i_split_2eq = [int(np.argmax(t_eval_obs_2eq >= t)) if np.any(t_eval_obs_2eq >= t)
-    #            else None for t in check_times_dates_2eq]
-    # np.save(T_EVAL_FNAME, t_eval_obs_2eq)
+    if not DRY_RUN_DISSTANS:
+        tohoku_steps_df.to_csv(TOH_STEPS_DATA_FNAME)
 
     # define break times
     t_min = pd.Timestamp("1996-04-02")
@@ -1313,8 +1229,9 @@ if __name__ == "__main__":
         obs_loc = pd.read_csv(OBS_LOC_FNAME, index_col=0)
     else:
         # save times
-        np.save(f"{T_EVAL_BASENAME}_2eq.npy", t_eval_obs_2eq)
-        np.save(f"{T_EVAL_BASENAME}_1eq.npy", t_eval_obs_1eq)
+        if not DRY_RUN_DOWNSAMPLING:
+            np.save(f"{T_EVAL_BASENAME}_2eq.npy", t_eval_obs_2eq)
+            np.save(f"{T_EVAL_BASENAME}_1eq.npy", t_eval_obs_1eq)
         # first for entire area
         assert not any([e is None for e in i_split_2eq])
         arr_split = np.split(t_eval_obs_2eq, i_split_2eq)
@@ -1327,6 +1244,7 @@ if __name__ == "__main__":
                 new_ts_time = []
                 new_ts_data = []
                 new_ts_sd = []
+                station_debug_started = False
                 for i, (a, a_mid) in enumerate(zip(arr_split, arr_split_mid)):
                     if i == 0:
                         sub_ix = ts.time < check_times_dates_2eq[0]
@@ -1390,7 +1308,32 @@ if __name__ == "__main__":
                         axis=0,
                     )
                     fit_resid_split = np.split(fit_resid, sub_i_split)
-                    fit_valid = [len(frs) > 0 for frs in fit_resid_split]
+                    fit_resid_split_check = [len(frs) > 0 for frs in fit_resid_split]
+                    tmid_inside_subt = np.array(
+                        [
+                            (
+                                False
+                                if subt.size == 0
+                                else (tmid + 2 >= subt.min())
+                                and (tmid - 2 <= subt.max())
+                            )
+                            for tmid, subt in zip(sub_t_eval_days, sub_t_split)
+                        ]
+                    )
+                    if any(~tmid_inside_subt):
+                        for i_invalid in np.flatnonzero(~tmid_inside_subt):
+                            if fit_resid_split_check[i_invalid]:
+                                if not station_debug_started:
+                                    tqdm.write(f"{station.name}: ")
+                                    station_debug_started = True
+                                invalid_mean = sub_d_split[i_invalid].mean(axis=0)
+                                tqdm.write(
+                                    f"  {i_invalid} @ {a[i_invalid]}="
+                                    f"{fit_model[i_invalid]} but mean={invalid_mean}"
+                                )
+                    fit_valid = np.logical_and(fit_resid_split_check, tmid_inside_subt)
+                    if not np.any(fit_valid):
+                        continue
                     fit_sd = np.stack(
                         [
                             np.std(frs, axis=0)
@@ -1433,6 +1376,7 @@ if __name__ == "__main__":
                 new_ts_time = []
                 new_ts_data = []
                 new_ts_sd = []
+                station_debug_started = False
                 for i, (a, a_mid) in enumerate(zip(arr_split, arr_split_mid)):
                     if i == 0:
                         sub_ix = ts.time < check_times_dates_1eq[0]
@@ -1495,7 +1439,32 @@ if __name__ == "__main__":
                         axis=0,
                     )
                     fit_resid_split = np.split(fit_resid, sub_i_split)
-                    fit_valid = [len(frs) > 0 for frs in fit_resid_split]
+                    fit_resid_split_check = [len(frs) > 0 for frs in fit_resid_split]
+                    tmid_inside_subt = np.array(
+                        [
+                            (
+                                False
+                                if subt.size == 0
+                                else (tmid + 2 >= subt.min())
+                                and (tmid - 2 <= subt.max())
+                            )
+                            for tmid, subt in zip(sub_t_eval_days, sub_t_split)
+                        ]
+                    )
+                    if any(~tmid_inside_subt):
+                        for i_invalid in np.flatnonzero(~tmid_inside_subt):
+                            if fit_resid_split_check[i_invalid]:
+                                if not station_debug_started:
+                                    tqdm.write(f"{station.name}: ")
+                                    station_debug_started = True
+                                invalid_mean = sub_d_split[i_invalid].mean(axis=0)
+                                tqdm.write(
+                                    f"  {i_invalid} @ {a[i_invalid]}="
+                                    f"{fit_model[i_invalid]} but mean={invalid_mean}"
+                                )
+                    fit_valid = np.logical_and(fit_resid_split_check, tmid_inside_subt)
+                    if not np.any(fit_valid):
+                        continue
                     fit_sd = np.stack(
                         [
                             np.std(frs, axis=0)
@@ -1530,13 +1499,15 @@ if __name__ == "__main__":
         # export downsampled timeseries
         ds_ts_2eq = net.export_network_ts("downsampled_2eq")
         # restrict to stations that are moving with PAC
-        list_sta_2eq = ds_ts_2eq["east"].data.columns.tolist()
-        # ds_values = {comp: np.array_split(ts.data.loc[:, list_sta_2eq].values, i_split_2eq)
+        sta_with_pa_and_ds = [
+            sta for sta in sta_with_pa if sta in ds_ts_2eq["east"].data.columns
+        ]
+        # ds_values = {comp: np.array_split(ts.data.loc[:, sta_with_pa_and_ds].values, i_split_2eq)
         #              for comp, ts in ds_ts_2eq.items()}
         # ds_times = np.array_split(t_eval_obs_2eq.astype(float), i_split_2eq)
         observed_data_2eq = np.stack(
             [
-                comp_ts.data.loc[:, list_sta_2eq].values.T
+                comp_ts.data.loc[:, sta_with_pa_and_ds].values.T
                 for comp_ts in ds_ts_2eq.values()
             ],
             axis=1,
@@ -1547,10 +1518,12 @@ if __name__ == "__main__":
             "ts_shape": observed_data_2eq.shape,
         }
         # save downsampled data with data gaps
-        np.save(SURF_DISPS_BASENAME + "_2eq.npy", observed_data_2eq)
-        with open(SURF_DISPS_BASENAME + "_2eq.json", mode="wt") as f:
-            json.dump(surf_disp_info_2eq, f)
+        if not DRY_RUN_DOWNSAMPLING:
+            np.save(SURF_DISPS_BASENAME + "_2eq.npy", observed_data_2eq)
+            with open(SURF_DISPS_BASENAME + "_2eq.json", mode="wt") as f:
+                json.dump(surf_disp_info_2eq, f)
         # same for the Honshu subset, only reusing stations
+        list_sta_2eq = ds_ts_2eq["east"].data.columns.tolist()
         list_sta_1eq = sorted(
             [sta.name for sta in net if "downsampled_1eq" in sta.timeseries]
         )
@@ -1560,7 +1533,7 @@ if __name__ == "__main__":
         )
         observed_data_1eq = np.stack(
             [
-                comp_ts.data.loc[:, list_sta_2eq].values.T
+                comp_ts.data.loc[:, sta_with_pa_and_ds].values.T
                 for comp_ts in ds_ts_1eq.values()
             ],
             axis=1,
@@ -1569,12 +1542,17 @@ if __name__ == "__main__":
             "i_eq": [0] + i_split_1eq,
             "ts_shape": observed_data_1eq.shape,
         }
-        np.save(SURF_DISPS_BASENAME + "_1eq.npy", observed_data_1eq)
-        with open(SURF_DISPS_BASENAME + "_1eq.json", mode="wt") as f:
-            json.dump(surf_disp_info_1eq, f)
+        if not DRY_RUN_DOWNSAMPLING:
+            np.save(SURF_DISPS_BASENAME + "_1eq.npy", observed_data_1eq)
+            with open(SURF_DISPS_BASENAME + "_1eq.json", mode="wt") as f:
+                json.dump(surf_disp_info_1eq, f)
         # transform observer locations to ENU
-        proj = Transformer.from_crs(CRS_WGS, CRS_UTM, always_xy=True)
-        ds_locs = station_loc_df.loc[list_sta_2eq, :]
+        from pyproj import Transformer, CRS  # noqa: E402
+
+        crs_wgs = CRS("WGS84")
+        crs_utm = CRS.from_epsg(32654)
+        proj = Transformer.from_crs(crs_wgs, crs_utm, always_xy=True)
+        ds_locs = station_loc_df.loc[sta_with_pa_and_ds, :]
         pts_surf = np.stack(
             list(
                 proj.transform(
@@ -1589,44 +1567,14 @@ if __name__ == "__main__":
             data=pts_surf, columns=["E", "N", "U"], index=ds_locs.index
         )
         obs_loc.index.names = ["Station"]
-        obs_loc.to_csv(OBS_LOC_FNAME)
-
-        # # fill data gaps
-        # # select data from stations who had at least half of the data available in the first
-        # # time period
-        # i_keep = np.all(np.stack([np.isnan(li[0]).sum(axis=0) < 0.5 * li[0].shape[0]
-        #                           for li in ds_values.values()], axis=0), axis=0)
-        # sta_keep = ds_ts_2eq["east"].data.columns[i_keep].tolist()
-        # ds_values = {comp: [a[:, i_keep] for a in li] for comp, li in ds_values.items()}
-        # # fill the missing values period by period, component by component
-        # filled_data = np.stack(
-        #     [np.concatenate(
-        #         [disstans.processing.decompose(
-        #             a, method="pca", num_components=None, detrend=ds_times[i], impute=True)
-        #          for i, a in enumerate(li)],
-        #         axis=0)
-        #      for li in ds_values.values()]).transpose(2, 0, 1)
-        # # for the same stations, also stack the data with holes
-        # observed_data_2eq = np.stack([comp_ts.data.values.T for comp_ts in ds_ts_2eq.values()],
-        #                          axis=1)[i_keep, :, :]
-        # assert filled_data.shape == observed_data_2eq.shape
-        # # save downsampled and filled data
-        # np.save(SURF_DISPS_BASENAME + "_filled.npy", filled_data)
-        # with open(SURF_DISPS_BASENAME + "_filled.json", mode="wt") as f:
-        #     json.dump(surf_disp_info_2eq,  f)
-        # # get locations of stations
-        # sta_keep_df = station_loc_df.loc[station_loc_df.index.isin(sta_keep), :]
-        # # save observers
-        # raise NotImplementedError("pts_surf needs to be recomputed for available stations")
-        # obs_loc = pd.DataFrame(data=pts_surf, columns=["E", "N", "U"],
-        #                        index=sta_keep_df.index)
-        # obs_loc.index.names = ["Station"]
-        # obs_loc.to_csv(OBS_LOC_FNAME)
+        if not DRY_RUN_DOWNSAMPLING:
+            obs_loc.to_csv(OBS_LOC_FNAME)
 
     # save data in IGS reference frame
     avail_stas = obs_loc.index.values.astype(str).tolist()
-    with open(SEAS_STATIONS_FNAME, mode="wt") as f:
-        json.dump(avail_stas, f)
+    if not DRY_RUN_DOWNSAMPLING:
+        with open(SEAS_STATIONS_FNAME, mode="wt") as f:
+            json.dump(avail_stas, f)
     # get SEAS data for downsampled stations
     for case in ["_2EQ", "_1EQ"]:
         net_seas_dict = net.export_network_ts(f"SEAS{case}", avail_stas)
@@ -1647,8 +1595,9 @@ if __name__ == "__main__":
             for t in cur_check_time
         ]
         # save data
-        np.save(f"{SEAS_TIME_BASENAME}{case.lower()}.npy", seas_time)
-        np.save(f"{SEAS_DATA_BASENAME}{case.lower()}.npy", seas_data)
-        np.save(f"{NONSEAS_DATA_BASENAME}{case.lower()}.npy", nonseas_data)
-        with open(f"{SEAS_DATA_BASENAME}{case.lower()}.json", mode="wt") as f:
-            json.dump({"i_eq": [0] + j_split, "ts_shape": seas_data.shape}, f)
+        if not DRY_RUN_DOWNSAMPLING:
+            np.save(f"{SEAS_TIME_BASENAME}{case.lower()}.npy", seas_time)
+            np.save(f"{SEAS_DATA_BASENAME}{case.lower()}.npy", seas_data)
+            np.save(f"{NONSEAS_DATA_BASENAME}{case.lower()}.npy", nonseas_data)
+            with open(f"{SEAS_DATA_BASENAME}{case.lower()}.json", mode="wt") as f:
+                json.dump({"i_eq": [0] + j_split, "ts_shape": seas_data.shape}, f)
